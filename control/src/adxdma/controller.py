@@ -3,7 +3,7 @@ import logging
 
 from odin.adapters.parameter_tree import ParameterTree
 
-from babyd.adxdma import adxdma, Register
+from adxdma.adxdma import adxdma, Register
 
 from functools import partial
 import struct
@@ -15,7 +15,6 @@ class AlphaDataController():
     def __init__(self, reg_file) -> None:
 
         self.xdma = adxdma()
-        # mapper = RegisterMapper(reg_file)
         with open(reg_file, 'r') as openfile:
             reg_dict = json.load(openfile)
 

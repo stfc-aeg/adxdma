@@ -8,7 +8,7 @@ import math
 import struct
 from functools import partial
 
-from babyd.xdma import xdma, XdmaException
+from adxdma.xdma import xdma, XdmaException
 # import struct
 
 

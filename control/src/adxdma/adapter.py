@@ -3,8 +3,8 @@ from odin.adapters.parameter_tree import ParameterTreeError
 from odin.util import decode_request_body
 
 
-from babyd.alphadata_ctrl import AlphaDataController
-from babyd.adxdma import AdxdmaException
+from adxdma.controller import AlphaDataController
+from adxdma.adxdma import AdxdmaException
 
 import logging
 
@@ -30,7 +30,7 @@ class BaseAdapter(ApiAdapter):
             content_type = 'application/json'
             status = 200
         except ParameterTreeError as param_error:
-            response = {"response": "BabyD GET Error: {}".format(param_error)}
+            response = {"response": "adxdma GET Error: {}".format(param_error)}
             content_type = 'application/json'
             status = 400
 
@@ -52,7 +52,7 @@ class BaseAdapter(ApiAdapter):
             status = 200
 
         except ParameterTreeError as param_error:
-            response = {'response': 'BabyD PUT error: {}'.format(param_error)}
+            response = {'response': 'adxdma PUT error: {}'.format(param_error)}
             content_type = 'application/json'
             status = 400
 

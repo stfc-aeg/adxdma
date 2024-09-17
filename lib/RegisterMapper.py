@@ -1,5 +1,3 @@
-from babyd.adxdma import Register
-
 
 import csv
 import json
