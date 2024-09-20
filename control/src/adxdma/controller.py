@@ -22,14 +22,18 @@ class AlphaDataController():
 
         for map in reg_dict:
             self.registers[map] = {}
+
             for reg in reg_dict[map]:
-                register = reg_dict[map][reg]
-                self.registers[map][reg] = Register(register["addr"], register["size"], register['readonly'], register.get("fields"))
+                if reg.isnumeric():
+                    self.registers[map][reg] = {}
+                    for actual_reg in reg_dict[map][reg]:
+                        register = reg_dict[map][reg][actual_reg]
+                        self.registers[map][reg][actual_reg] = Register(register["addr"], register["size"], register['readonly'], register.get("fields"))
+                else:
+                    register = reg_dict[map][reg]
+                    self.registers[map][reg] = Register(register["addr"], register["size"], register['readonly'], register.get("fields"))
 
         self.param_tree = None
-
-        # logging.debug(mapper.reg_dict.keys())
-        # self.registers = mapper.reg_dict
 
         self._params = {
             "control": {
@@ -37,24 +41,49 @@ class AlphaDataController():
                 "connect": (None, self.connect_device),
                 "disconnect": (None, self.disconnect_device),
             },
-            "registers": {key.lower(): {
-                reg_name: {
-                    **reg.param_tree,
-                    "value": (partial(self.read_reg, register=reg),
-                              None if reg.readonly else (partial(self.write_reg, register=reg))),
-                    "fields": None if not reg.fields else {
-                        field_name: (partial(self.read_field, register=reg, field_addr=field_addr),
-                                     None if reg.readonly else (partial(self.write_field, register=reg, field_addr=field_addr)),
-                                     {  # metadata
-                                         "min": 0,
-                                         "max": 1 if not isinstance(field_addr, (list, tuple)) else
-                                            pow(2, (field_addr[1] - field_addr[0] + 1)) - 1
-                                     })
-
-                        for field_name, field_addr in reg.fields.items()}
-                } for reg_name, reg in value.items()
-            } for key, value in self.registers.items()}
         }
+
+        self._params['registers'] = {}
+        for map_name, map_dict in self.registers.items():
+            map_name = map_name.lower()
+            logging.debug("Param Tree for %s started", map_name)
+            self._params['registers'][map_name] = {}
+            # reg_pointer = self._params['registers'][map_name.lower()]
+            for reg_name, reg in map_dict.items():
+                if reg_name.isnumeric():
+                    logging.debug("Sub tree for %s: %s", map_name, reg_name)
+                    self._params['registers'][map_name][reg_name] = {}
+                    for actual_reg_name, actual_reg in reg.items():
+                        self._params['registers'][map_name][reg_name][actual_reg_name] = {
+                            **actual_reg.param_tree,
+                            "value": (partial(self.read_reg, register=actual_reg),
+                                      None if actual_reg.readonly else (partial(self.write_reg, register=actual_reg))),
+                            "fields": None if not actual_reg.fields else {
+                                field_name: (partial(self.read_field, register=actual_reg, field_addr=field_addr),
+                                             None if actual_reg.readonly else (partial(self.write_field, register=actual_reg, field_addr=field_addr)),
+                                             {  # metadata
+                                                "min": 0,
+                                                "max": 1 if not isinstance(field_addr, (list, tuple)) else
+                                                        pow(2, (field_addr[1] - field_addr[0] + 1)) - 1
+                                            })
+                                for field_name, field_addr in actual_reg.fields.items()}
+                        }
+                else:
+                    self._params['registers'][map_name][reg_name] = {
+                        **reg.param_tree,
+                        "value": (partial(self.read_reg, register=reg),
+                                  None if reg.readonly else (partial(self.write_reg, register=reg))),
+                        "fields": None if not reg.fields else {
+                            field_name: (partial(self.read_field, register=reg, field_addr=field_addr),
+                                         None if reg.readonly else (partial(self.write_field, register=reg, field_addr=field_addr)),
+                                         {  # metadata
+                                            "min": 0,
+                                            "max": 1 if not isinstance(field_addr, (list, tuple)) else
+                                                    pow(2, (field_addr[1] - field_addr[0] + 1)) - 1
+                                         })
+
+                            for field_name, field_addr in reg.fields.items()}
+                    }
 
     def init_tree(self):
         self.param_tree = ParameterTree(self._params)
